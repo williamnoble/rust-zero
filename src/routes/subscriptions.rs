@@ -17,10 +17,9 @@ pub async fn subscribe(
     form: web::Form<FormData>,
     pool: web::Data<PgPool>,
 ) -> HttpResponse {
-    let request_id = Uuid::new_v4();
     let request_span = tracing::info_span!(
         "Adding a new subscriber.",
-        %request_id,
+        // TODO: Add comment for %form.email nomenclature
         subscriber_email = %form.email,
         subscriber_name = %form.name
     );
