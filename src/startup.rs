@@ -16,6 +16,7 @@ pub fn run (listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::E
             .route("/{name}", web::get().to(greet))
             .app_data(db_pool.clone())
     })
+        // pass in a listener so we can modify this value depending on if we call from main or tests
         .listen(listener)?
         .run();
     Ok(server)
