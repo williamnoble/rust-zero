@@ -12,7 +12,6 @@ async fn main() -> std::io::Result<()> {
     let subscriber = get_subscriber("zero2prod".into(), "info".into(), std::io::stdout);
     init_subscriber(subscriber);
 
-
     let configuration = get_configuration().expect("Failed to read configuration.");
     let address = format!("{}:{}", configuration.application.host, configuration.application.port);
     // connect_lazy will only connect the db when it's actually used for the first time
