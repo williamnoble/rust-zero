@@ -6,10 +6,6 @@ use unicode_segmentation::UnicodeSegmentation;
 #[derive(Debug)]
 pub struct SubscriberName(String);
 
-pub struct NewSubscriber {
-    pub email: String,
-    pub name: SubscriberName,
-}
 
 impl SubscriberName {
     pub fn parse(s: String) -> Result<SubscriberName, String> {
@@ -35,7 +31,7 @@ impl AsRef<str> for SubscriberName {
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::SubscriberName;
+    use crate::domain::subscriber_name::SubscriberName;
     use claim::{assert_err, assert_ok};
 
     #[test]
