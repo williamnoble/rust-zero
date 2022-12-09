@@ -5,6 +5,7 @@ use zero2prod::startup::run;
 use zero2prod::telemetry::{get_subscriber, init_subscriber};
 use zero2prod::configuration::get_configuration;
 use secrecy::ExposeSecret;
+use zero2prod::email_client::EmailClient;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -17,8 +18,16 @@ async fn main() -> std::io::Result<()> {
     // connect_lazy will only connect the db when it's actually used for the first time
     let connection_pool = PgPool::connect_lazy(&configuration.database.connection_string().expose_secret())
         .expect("Failed to connect to Postgres.");
+
+    let sender_email = configuration.email_client.sender().expect("Invalid sender email address");
+    let email_client = EmailClient::new(
+        configuration.email_client.base_url,
+        sender_email,
+        configuration.email_client.authorization_token,
+    );
+
     info!("Listening on address: {}", &address);
     let listener = TcpListener::bind(address)?;
-    run(listener, connection_pool)?.await?;
+    run(listener, connection_pool, email_client)?.await?;
     Ok(())
 }

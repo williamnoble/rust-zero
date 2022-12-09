@@ -4,14 +4,12 @@ use tracing_log::LogTracer;
 use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 use tracing_subscriber::fmt::MakeWriter;
 
-pub fn get_subscriber<Sink>(
-    name: String,
-    env_filter: String,
-    // Sink refers to the output writer, e.g. std::io::stdout
-    // we return a thread safe Subscriber
-    sink: Sink) -> impl Subscriber + Send + Sync
-        where
-            Sink: for<'a> MakeWriter<'a> + Send + Sync + 'static,
+
+// Sink refers to the output writer, e.g. std::io::stdout
+// we return a thread safe Subscriber
+pub fn get_subscriber<Sink>(name: String, env_filter: String,sink: Sink) ->
+        impl Subscriber + Send + Sync
+        where Sink: for<'a> MakeWriter<'a> + Send + Sync + 'static,
 // Sink is a type that can create io::Write instances.
 // MakeWriter is used by fmt::Layer or fmt::Subscriber to print formatted text representations of Events
 {

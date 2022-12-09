@@ -12,29 +12,28 @@ subscriber_email = %form.email,
 subscriber_name = %form.name
 )
 )]
-pub async fn subscribe(
-    form: web::Form<FormData>,
-    pool: web::Data<PgPool>,
-) -> HttpResponse {
-    let name = match SubscriberName::parse(form.0.name) {
-        Ok(name) => {name},
+pub async fn subscribe(form: web::Form<FormData>,pool: web::Data<PgPool>) -> HttpResponse {
+    // this is the syntactic opposite of NewSubscriber::try_from(form.0)
+    // either is valid and a matter of preference
+    let new_subscriber = match form.0.try_into() {
+        Ok(form) => form,
         Err(_) => return HttpResponse::BadRequest().finish(),
-    };
-
-    let email = match SubscriberEmail::parse(form.0.email) {
-        Ok(email) => email,
-        Err(_) => return HttpResponse::BadRequest().finish(),
-    };
-
-    let new_subscriber = NewSubscriber{
-        email,
-        name,
     };
 
     match insert_subscriber(&pool, &new_subscriber).await
     {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(_) => HttpResponse::InternalServerError().finish()
+    }
+}
+
+impl TryFrom<FormData> for NewSubscriber{
+    type Error =String;
+
+    fn try_from(value: FormData) -> Result<Self, Self::Error> {
+        let name = SubscriberName::parse(value.name)?;
+        let email = SubscriberEmail::parse(value.email)?;
+        Ok(Self{ email, name })
     }
 }
 

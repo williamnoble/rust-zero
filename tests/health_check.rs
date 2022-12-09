@@ -4,6 +4,7 @@ use secrecy::ExposeSecret;
 use sqlx::{Executor, PgConnection, PgPool, Connection};
 use uuid::Uuid;
 use zero2prod::configuration::{DatabaseSettings, get_configuration};
+use zero2prod::email_client::EmailClient;
 use zero2prod::startup::run;
 use zero2prod::telemetry::{init_subscriber, get_subscriber};
 
@@ -16,6 +17,7 @@ static TRACING: Lazy<()> = Lazy::new(|| {
 // We cannot assign the output of `get_subscriber` to a variable based on the value of `TEST_LOG`
 // because the sink is part of the type returned by `get_subscriber`, therefore they are not the
 // same type. We could work around it, but this is the most straight-forward way of moving forward.
+    // If we're testing write to std out otherwise use the given sink (writer)
     if std::env::var("TEST_LOG").is_ok() {
         let subscriber = get_subscriber(subscriber_name, default_filter_level, std::io::stdout);
         init_subscriber(subscriber);
@@ -88,7 +90,7 @@ async fn subscribe_returns_a_400_when_data_is_missing() {
             400,
             response.status().as_u16(),
             "The API did not fail with 400 Bad Request when the payload was {}.",
-error_message
+            error_message
         );
     }
 }
@@ -121,7 +123,6 @@ async fn subscribe_returns_400_when_fields_are_present_but_empty() {
             description
         )
     }
-
 }
 
 pub struct TestApp {
@@ -139,12 +140,21 @@ async fn spawn_app() -> TestApp {
     // Override the database_name for tests to ensure a unique db is create for the test run. The ensures isolation
     // of the main database.
     configuration.database.database_name = Uuid::new_v4().to_string();
+
+    let sender_email = configuration.email_client.sender()
+        .expect("Invalid sender email address.");
+    let email_client = EmailClient::new(
+        configuration.email_client.base_url,
+        sender_email,
+        configuration.email_client.authorization_token,
+    );
+
     let connection_pool = configure_database(&configuration.database).await;
-    let server = run(listener, connection_pool.clone()).expect("Failed to bind address");
+    let server = run(listener, connection_pool.clone(), email_client).expect("Failed to bind address");
     let _ = tokio::spawn(server);
-    TestApp{
+    TestApp {
         address,
-        db_pool: connection_pool
+        db_pool: connection_pool,
     }
 }
 
