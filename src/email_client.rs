@@ -67,7 +67,7 @@ mod tests {
         Mock,
         MockServer,
         ResponseTemplate,
-        matchers::any
+        matchers::{header_exists, path, method, header},
     };
     use crate::domain::SubscriberEmail;
     use crate::email_client::EmailClient;
@@ -77,23 +77,18 @@ mod tests {
         let sender = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
         let email_client = EmailClient::new(mock_server.uri(), sender, Secret::new(Faker.fake()));
 
-        Mock::given(any())
+        Mock::given(header_exists("X-Postmark-Server-Token"))
+            .and(header("Content-Type", "application-json"))
+            .and(path("/email"))
+            .and(method("POST"))
             .respond_with(ResponseTemplate::new(200))
             .expect(1)
             .mount(&mock_server)
             .await;
-
 
         let subscriber_email = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
         let subject: String = Sentence(1..2).fake();
         let content: String = Paragraph(1..10).fake();
-
-        Mock::given(any())
-            .respond_with(ResponseTemplate::new(200))
-            .expect(1)
-            .mount(&mock_server)
-            .await;
-
         let _ = email_client
             .send_email(subscriber_email, &subject, &content, &content)
             .await;
