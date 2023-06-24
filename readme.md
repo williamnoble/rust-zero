@@ -1,6 +1,6 @@
-# Newsletter API
+# Zero to Production, written in Rust
 
-
+I'm only about half way through the book.
 
 ## Docker Build Size (Multistage vs Standard)
 
